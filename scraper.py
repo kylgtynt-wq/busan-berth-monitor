@@ -26,7 +26,12 @@ from bs4 import BeautifulSoup
 
 import config
 
-HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+HEADERS = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                   "(KHTML, like Gecko) Chrome/120.0 Safari/537.36"),
+    "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
 TIMEOUT = 25
 
 
@@ -201,15 +206,27 @@ def _best_table(soup):
 
 
 def parse_table(terminal):
-    """헤더 매핑 기반 표 파서. GET/POST 모두 지원."""
+    """헤더 매핑 기반 표 파서. GET/POST 모두 지원.
+
+    일부 터미널(PNC 등)은 세션 쿠키 없이 바로 호출하면 403. prime_url 이 있으면
+    먼저 들러 쿠키(JSESSIONID)를 확보한 뒤 본 요청을 보낸다(클라우드 IP 대비).
+    """
     url = terminal["schedule_url"]
     headers = dict(HEADERS)
     headers["Referer"] = terminal.get("referer", url)
+    sess = requests.Session()
+    sess.headers.update(HEADERS)
+    prime = terminal.get("prime_url")
+    if prime:
+        try:
+            sess.get(prime, headers={"Referer": prime}, timeout=TIMEOUT)
+        except requests.RequestException:
+            pass
     if terminal.get("method", "GET").upper() == "POST":
-        r = requests.post(url, data=terminal.get("post_data", {}),
-                          headers=headers, timeout=TIMEOUT)
+        r = sess.post(url, data=terminal.get("post_data", {}),
+                      headers=headers, timeout=TIMEOUT)
     else:
-        r = requests.get(url, headers=headers, timeout=TIMEOUT)
+        r = sess.get(url, headers=headers, timeout=TIMEOUT)
     r.raise_for_status()
     r.encoding = r.apparent_encoding or "utf-8"
     soup = BeautifulSoup(r.text, "html.parser")

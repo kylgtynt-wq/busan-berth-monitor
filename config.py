@@ -41,6 +41,9 @@ TERMINALS = [
         "port": "신항",
         "parser": "table",
         "schedule_url": "https://svc.pncport.com/info/CMS/Ship/Info.pnc?mCode=MN014",
+        # 세션 쿠키 없이 바로 호출하면 403 → 메인 먼저 들러 JSESSIONID 확보
+        "prime_url": "https://svc.pncport.com/info/",
+        "referer": "https://svc.pncport.com/info/",
         "enabled": True,
     },
     {
