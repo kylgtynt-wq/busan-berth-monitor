@@ -1,0 +1,19 @@
+name: keep-alive
+
+# Render 무료 인스턴스는 15분 미사용 시 잠자기에 들어간다.
+# 10분마다 URL을 깨워 콜드스타트(~50초)를 방지한다. (public repo라 Actions 무료)
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}        # 수동 실행도 가능
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping dashboard
+        run: |
+          echo "ping $(date -u)"
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 \
+            https://busan-berth-monitor.onrender.com/api/status || echo "000")
+          echo "HTTP $code"

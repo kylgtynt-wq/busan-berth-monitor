@@ -95,8 +95,8 @@
 </div>
 
 <div class="note">
-  ※ 공개 자료 수집: <b>PNC·PNIT·HJNC·HPNT·BNCT(신항), BPT(신선대·감만)·HKT(감만, 북항)</b> — 7개 터미널.
-  DGT는 공컨 API가 보호되어 현재 미포함.
+  ※ 공개 자료 수집: <b>PNC·PNIT·HJNC·HPNT·BNCT·DGT(신항), BPT(신선대·감만)·HKT(감만, 북항)</b> — 8개 터미널.
+  (PNC는 클라우드 배포 환경에선 제외)
   규격: <b>20'</b>(20피트)·<b>40'DRY</b>(40 일반)·<b>40'HQ</b>(40 하이큐브)·<b>45'</b>·<b>냉동</b>(리퍼)·<b>기타특수</b>(오픈탑·플랫랙·플랫폼·탱크).
   {% for code, info in terminals.items() %}{% if info.error %}<br><span class="err">⚠ {{ code }} 수집 오류: {{ info.error }}</span>{% endif %}{% endfor %}
 </div>

@@ -274,12 +274,46 @@ def scrape_pnc_empty():
     return out
 
 
+def scrape_dgt_empty():
+    """DGT 공컨 재고. 페이지 meta의 _csrf 토큰을 헤더로 POST(emptyCntrAmount)."""
+    import json as _json
+    import re as _re
+    s = requests.Session()
+    s.headers.update(HEADERS)
+    page = s.get("https://info.dgtbusan.com/DGT/esvc/", timeout=TIMEOUT).text
+    meta = dict(_re.findall(r'<meta\s+name="(_csrf[^"]*)"\s+content="([^"]*)"', page))
+    hdrs = {"Referer": "https://info.dgtbusan.com/DGT/esvc/",
+            "Content-Type": "application/json;charset=UTF-8",
+            "X-Requested-With": "XMLHttpRequest"}
+    hn, tok = meta.get("_csrf_header"), meta.get("_csrf")
+    if hn and tok:
+        hdrs[hn] = tok
+    r = s.post("https://info.dgtbusan.com/DGT/esvc/emptyCntrAmount",
+               headers=hdrs, data=_json.dumps({"operatorFilters": [{}]}), timeout=TIMEOUT)
+    r.raise_for_status()
+    data = r.json()
+    if isinstance(data, dict):
+        data = data.get("data") or data.get("list") or []
+    out = []
+    for e in data:
+        qty = _int(str(e.get("QTY")))
+        if qty <= 0:
+            continue
+        out.append({"terminal": "DGT", "zone": "신항8부두",
+                    "operator": (e.get("OPR") or "").strip(),
+                    "group": (e.get("CTYPE") or "").strip(),   # GE=일반, RF/OT...
+                    "size": (e.get("CSIZE") or "").strip(),     # 20/40/40H/45
+                    "qty": qty})
+    return out
+
+
 EMPTY_SOURCES = {
     "PNC": scrape_pnc_empty,
     "PNIT": scrape_pnit_empty,
     "HJNC": scrape_hjnc_empty,
     "HPNT": scrape_hpnt_empty,
     "BNCT": scrape_bnct_empty,
+    "DGT": scrape_dgt_empty,
     "BPT": scrape_bpt_empty,
     "HKT": scrape_hkt_empty,
 }
