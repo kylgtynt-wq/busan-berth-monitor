@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: busan-berth-monitor
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # 워커 1개(백그라운드 수집 스레드 + 인메모리 상태 공유), 스레드 8개로 동시요청 처리
+    startCommand: gunicorn app:app --workers 1 --threads 8 --timeout 120
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: BERTH_INTERVAL
+        value: "300"

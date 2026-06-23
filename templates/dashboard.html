@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부산항 접안 스케줄 모니터</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+    --new:#22c55e; --new-bg:rgba(34,197,94,.14);
+    --chg:#f59e0b; --chg-bg:rgba(245,158,11,.16);
+    --rmv:#ef4444; --rmv-bg:rgba(239,68,68,.14);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","Segoe UI",sans-serif;background:var(--bg);color:var(--txt);}
+  header{padding:16px 22px;background:linear-gradient(90deg,#0c4a6e,#1e293b);border-bottom:1px solid var(--line);
+         display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header h1{font-size:18px;margin:0}
+  header .meta{color:var(--muted);font-size:13px}
+  header .spacer{flex:1}
+  button{background:var(--accent);color:#06283d;border:0;border-radius:7px;padding:8px 14px;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  .wrap{padding:18px 22px;display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+  @media(max-width:1100px){.wrap{grid-template-columns:1fr}}
+  .terminal{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:18px;overflow:hidden}
+  .terminal>h2{margin:0;padding:12px 16px;font-size:15px;background:var(--panel2);display:flex;gap:10px;align-items:center}
+  .terminal>h2 .port{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:1px 7px;border-radius:20px}
+  .terminal>h2 .cnt{margin-left:auto;color:var(--muted);font-size:12px;font-weight:400}
+  .stale{color:var(--chg);font-size:11px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:11px;position:sticky}
+  tbody tr:hover{background:rgba(56,189,248,.06)}
+  tr.row-new{background:var(--new-bg)} tr.row-changed{background:var(--chg-bg)}
+  .tag{font-size:10px;font-weight:800;padding:2px 6px;border-radius:5px}
+  .tag.new{background:var(--new);color:#052e16}
+  .tag.chg{background:var(--chg);color:#3a2606}
+  td.hot{color:#fff;font-weight:800;position:relative}
+  td.hot::after{content:"●";color:var(--chg);font-size:9px;position:absolute;top:3px;right:4px}
+  .vessel{font-weight:700}
+  .err{color:var(--rmv);padding:10px 16px;font-size:12px}
+  /* 변동 패널 */
+  aside{background:var(--panel);border:1px solid var(--line);border-radius:12px;position:sticky;top:74px;max-height:calc(100vh - 96px);overflow:auto}
+  aside h3{margin:0;padding:12px 16px;font-size:14px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .chg-item{padding:10px 16px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .chg-item .top{display:flex;gap:8px;align-items:center;margin-bottom:3px}
+  .chg-item .vn{font-weight:700}
+  .chg-item .tm{color:var(--muted);font-size:11px;margin-left:auto}
+  .chg-item .det{color:var(--muted);font-size:12px;line-height:1.5}
+  .chg-item .det b{color:var(--chg)}
+  .badge{font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px}
+  .badge.new{background:var(--new-bg);color:var(--new)}
+  .badge.changed{background:var(--chg-bg);color:var(--chg)}
+  .badge.removed{background:var(--rmv-bg);color:var(--rmv)}
+  .empty{padding:20px 16px;color:var(--muted);font-size:13px}
+  /* 터미널 필터 바 */
+  .filterbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+        padding:10px 22px;background:var(--panel);border-bottom:1px solid var(--line);
+        position:sticky;top:53px;z-index:4}
+  .filterbar .flabel{color:var(--muted);font-size:12px;font-weight:700;margin-right:2px}
+  .fchk{display:inline-flex;align-items:center;gap:5px;background:var(--panel2);
+        border:1px solid var(--line);border-radius:20px;padding:4px 11px;font-size:13px;
+        cursor:pointer;user-select:none}
+  .fchk small{color:var(--muted);font-size:11px}
+  .fchk:has(input:not(:checked)){opacity:.45}
+  .fchk input{accent-color:var(--accent);cursor:pointer}
+  .fspacer{flex:1}
+  .filterbar .fall{color:var(--accent);font-size:12px;text-decoration:none;border:1px solid var(--line);
+        border-radius:6px;padding:3px 10px}
+  /* 모선 검색 + 조회범위 바 */
+  .toolbar2{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+        padding:8px 22px;background:var(--bg);border-bottom:1px solid var(--line);
+        position:sticky;top:101px;z-index:3}
+  .toolbar2 input#vsearch{background:var(--panel);border:1px solid var(--line);color:var(--txt);
+        border-radius:8px;padding:8px 12px;font-size:14px;width:260px;max-width:60vw}
+  .toolbar2 .t2lab{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px}
+  .toolbar2 select{background:var(--panel);border:1px solid var(--line);color:var(--txt);
+        border-radius:7px;padding:6px 9px;font-size:13px}
+  .toolbar2 .hint{color:var(--muted);font-size:12px}
+  td.cct{color:#cbd5e1}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛳️ 부산항 접안 스케줄 모니터</h1>
+  <span class="meta">최종 수집: <b id="collectedAt">{{ meta.get('collected_at','-') }}</b></span>
+  <span class="meta" id="autoState">🟢 자동수집 켜짐</span>
+  <span class="spacer"></span>
+  <a href="/empty" style="text-decoration:none"><button class="ghost">📦 공컨 재고</button></a>
+  <button onclick="collect()" id="btn">지금 수집</button>
+  <button class="ghost" onclick="location.reload()">새로고침</button>
+</header>
+
+<!-- 터미널 필터: 체크한 터미널만 아래에 표시 -->
+<div class="filterbar">
+  <span class="flabel">터미널 표시:</span>
+  {% for code, info in terminals.items() %}
+    <label class="fchk"><input type="checkbox" class="tfilter" value="{{ code }}" checked>
+      {{ code }} <small>{{ info.port }}·{{ info.records|length }}척</small></label>
+  {% endfor %}
+  <span class="fspacer"></span>
+  <a href="#" class="fall" onclick="setAll(true);return false">전체</a>
+  <a href="#" class="fall" onclick="setAll(false);return false">해제</a>
+</div>
+
+<!-- 모선 검색 + 반입마감 조회 범위 -->
+<div class="toolbar2">
+  <input id="vsearch" placeholder="🔍 모선명·항차 검색…" autocomplete="off" oninput="applyFilters()">
+  <label class="t2lab">반입마감 범위:
+    <select id="drange" onchange="applyFilters()">
+      <option value="all">전체</option>
+      <option value="0">오늘까지</option>
+      <option value="1">내일까지</option>
+      <option value="3">3일 이내</option>
+      <option value="7">7일 이내</option>
+    </select>
+  </label>
+  <span id="rangeInfo" class="hint"></span>
+  <span class="fspacer"></span>
+  <span id="shownInfo" class="hint"></span>
+</div>
+
+<div class="wrap">
+  <!-- 좌: 터미널별 스케줄 -->
+  <main>
+    {% for code, info in terminals.items() %}
+    <section class="terminal" data-term="{{ code }}">
+      <h2>
+        {{ code }} · {{ info.name }}
+        <span class="port">{{ info.port }}</span>
+        <span class="cnt">{{ info.records|length }}척
+          {% if info.get('stale') %}<span class="stale">(이전 데이터 유지)</span>{% endif %}
+        </span>
+      </h2>
+      {% if info.error %}<div class="err">⚠ 수집 오류: {{ info.error }}</div>{% endif %}
+      {% if info.records %}
+      <table>
+        <thead><tr>
+          <th>상태</th><th>선박명</th><th>모선항차</th><th>항로</th>
+          <th>반입마감</th><th>접안(ETB)</th><th>출항(ETD)</th><th>선석</th><th>양/적하</th>
+        </tr></thead>
+        <tbody>
+        {% for r in info.records %}
+          {% set cf = r.get('_changed_fields', []) %}
+          <tr class="{% if r._change=='new' %}row-new{% elif r._change=='changed' %}row-changed{% endif %}"
+              data-vessel="{{ (r.vessel or '')|lower }}" data-voyage="{{ (r.voyage or '')|lower }}"
+              data-cct="{{ r.cct }}" data-etb="{{ r.etb }}">
+            <td>
+              {% if r._change=='new' %}<span class="tag new">신규</span>
+              {% elif r._change=='changed' %}<span class="tag chg">변경</span>{% endif %}
+            </td>
+            <td class="vessel {% if 'vessel' in cf %}hot{% endif %}">{{ r.vessel }}</td>
+            <td>{{ r.voyage }}</td>
+            <td>{{ r.route }}</td>
+            <td class="cct {% if 'cct' in cf %}hot{% endif %}">{{ r.cct or '—' }}</td>
+            <td class="{% if 'etb' in cf %}hot{% endif %}">{{ r.etb }}</td>
+            <td class="{% if 'etd' in cf %}hot{% endif %}">{{ r.etd }}</td>
+            <td class="{% if 'berth' in cf %}hot{% endif %}">{{ r.berth }}</td>
+            <td class="{% if 'work' in cf %}hot{% endif %}">{{ r.work }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% elif not info.error %}
+      <div class="empty">데이터 없음</div>
+      {% endif %}
+    </section>
+    {% else %}
+    <div class="empty">수집된 터미널이 없습니다. ‘지금 수집’을 눌러주세요.</div>
+    {% endfor %}
+  </main>
+
+  <!-- 우: 변동 내역 -->
+  <aside>
+    <h3>🔔 변동 내역 (최근 {{ changes|length }})</h3>
+    {% if changes %}
+      {% for c in changes %}
+      <div class="chg-item">
+        <div class="top">
+          {% if c.type=='new' %}<span class="badge new">신규</span>
+          {% elif c.type=='changed' %}<span class="badge changed">변경</span>
+          {% else %}<span class="badge removed">취소</span>{% endif %}
+          <span class="vn">{{ c.vessel }}</span>
+          <span class="tm">{{ c.at[5:] }}</span>
+        </div>
+        <div class="det">
+          {{ c.terminal }} · {{ c.voyage }}
+          {% if c.fields %}<br>
+            {% for f in c.fields %}
+              {{ f.label }}: <b>{{ f.old }}</b> → <b>{{ f.new }}</b>{% if not loop.last %}<br>{% endif %}
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">아직 감지된 변동이 없습니다.<br>두 번째 수집부터 직전과 비교해 표시됩니다.</div>
+    {% endif %}
+  </aside>
+</div>
+
+<script>
+// ===== 통합 필터: 터미널 체크 + 모선 검색 + 반입마감 조회범위 =====
+const FKEY = 'berthTerminalFilter';
+const VKEY = 'berthVesselSearch';
+const RKEY = 'berthDateRange';
+function loadSel(){ try{ return JSON.parse(localStorage.getItem(FKEY)); }catch(e){ return null; } }
+function saveSel(){
+  const sel = Array.from(document.querySelectorAll('.tfilter')).filter(c=>c.checked).map(c=>c.value);
+  localStorage.setItem(FKEY, JSON.stringify(sel));
+}
+function pd(s){ // "YYYY-MM-DD HH:MM" -> Date (없으면 null)
+  if(!s) return null;
+  const m = s.match(/(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
+  if(!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0));
+}
+function cutoff(dr){
+  if(dr==='all') return null;
+  const t = new Date(); t.setHours(0,0,0,0);
+  t.setDate(t.getDate() + parseInt(dr) + 1);   // 그 날 끝
+  return t.getTime() - 1;
+}
+function applyFilters(){
+  const vq = (document.getElementById('vsearch').value||'').trim().toLowerCase();
+  const dr = document.getElementById('drange').value;
+  const cut = cutoff(dr);
+  localStorage.setItem(VKEY, vq);
+  localStorage.setItem(RKEY, dr);
+
+  const checked = {};
+  document.querySelectorAll('.tfilter').forEach(c=>checked[c.value]=c.checked);
+
+  let totalShown = 0, minD=null, maxD=null;
+  document.querySelectorAll('.terminal').forEach(sec=>{
+    const term = sec.dataset.term;
+    if(!checked[term]){ sec.style.display='none'; return; }
+    let shown = 0;
+    sec.querySelectorAll('tbody tr').forEach(tr=>{
+      const ves = tr.dataset.vessel||'', voy = tr.dataset.voyage||'';
+      const dt = pd(tr.dataset.cct) || pd(tr.dataset.etb);
+      const okV = !vq || ves.includes(vq) || voy.includes(vq);
+      const okD = cut===null || (dt && dt.getTime()<=cut);
+      const vis = okV && okD;
+      tr.style.display = vis ? '' : 'none';
+      if(vis){ shown++; const c=pd(tr.dataset.cct); if(c){ if(!minD||c<minD)minD=c; if(!maxD||c>maxD)maxD=c; } }
+    });
+    // 검색/범위로 0건이면 섹션 숨김(터미널 체크는 됐지만 매칭 없음)
+    sec.style.display = (shown>0 || (!vq && dr==='all')) ? '' : 'none';
+    const cnt = sec.querySelector('.cnt');
+    if(cnt){ const base = sec.querySelectorAll('tbody tr').length;
+      cnt.firstChild.textContent = (vq||dr!=='all') ? (shown+'/'+base+'척 ') : (base+'척 '); }
+    totalShown += shown;
+  });
+
+  const fmt = d=> d? (d.getMonth()+1)+'/'+d.getDate(): '';
+  document.getElementById('rangeInfo').textContent =
+    minD ? ('표시 반입마감: '+fmt(minD)+' ~ '+fmt(maxD)) : '';
+  document.getElementById('shownInfo').textContent = '표시 '+totalShown+'척';
+}
+function setAll(v){
+  document.querySelectorAll('.tfilter').forEach(c=>c.checked=v);
+  saveSel(); applyFilters();
+}
+(function initFilter(){
+  const saved = loadSel();           // null=최초(전체 체크 유지)
+  document.querySelectorAll('.tfilter').forEach(c=>{
+    if(saved) c.checked = saved.includes(c.value);
+    c.addEventListener('change', ()=>{ saveSel(); applyFilters(); });
+  });
+  const vq = localStorage.getItem(VKEY); if(vq) document.getElementById('vsearch').value = vq;
+  const dr = localStorage.getItem(RKEY); if(dr) document.getElementById('drange').value = dr;
+  applyFilters();
+})();
+
+async function collect(){
+  const b=document.getElementById('btn'); b.disabled=true; b.textContent='수집 중…';
+  try{ const r=await fetch('/api/collect',{method:'POST'}); const j=await r.json();
+       b.textContent='변동 '+j.changes+'건'; setTimeout(()=>location.reload(),700); }
+  catch(e){ b.textContent='오류'; b.disabled=false; }
+}
+
+// 준실시간: 30초마다 서버 수집시각을 확인하고, 새 수집이 있으면 자동 반영(리로드)
+const CURRENT_AT = {{ meta.get('collected_at','')|tojson }};
+async function poll(){
+  try{
+    const r = await fetch('/api/status', {cache:'no-store'});
+    const s = await r.json();
+    document.getElementById('collectedAt').textContent = s.collected_at || '-';
+    document.getElementById('autoState').textContent =
+      '🟢 자동수집 ' + Math.round((s.interval||300)/60) + '분 주기';
+    if (s.collected_at && CURRENT_AT && s.collected_at !== CURRENT_AT){
+      location.reload();               // 새 데이터 도착 → 즉시 갱신
+    }
+  }catch(e){
+    document.getElementById('autoState').textContent = '🔴 연결 끊김';
+  }
+}
+setInterval(poll, 30000);
+poll();
+</script>
+</body>
+</html>

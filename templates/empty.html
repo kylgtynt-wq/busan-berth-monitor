@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부산항 공컨(EMPTY) 재고 — 선사별 조회</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","Segoe UI",sans-serif;background:var(--bg);color:var(--txt);}
+  header{padding:16px 22px;background:linear-gradient(90deg,#0c4a6e,#1e293b);border-bottom:1px solid var(--line);
+         display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header h1{font-size:18px;margin:0}
+  header .meta{color:var(--muted);font-size:13px}
+  header .spacer{flex:1}
+  button{background:var(--accent);color:#06283d;border:0;border-radius:7px;padding:8px 14px;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  .searchbar{padding:18px 22px 6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .searchbar input{background:var(--panel);border:1px solid var(--line);color:var(--txt);
+        border-radius:9px;padding:11px 14px;font-size:16px;width:320px;max-width:80vw}
+  .searchbar .clr{padding:9px 13px;font-size:13px;cursor:pointer}
+  .searchbar .hint{color:var(--muted);font-size:12.5px}
+  .chips{padding:4px 22px 10px;display:flex;gap:7px;flex-wrap:wrap}
+  .chip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:20px;
+        padding:4px 12px;font-size:12.5px;cursor:pointer}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .wrap{padding:8px 22px 40px}
+  .op-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden}
+  .op-card>h2{margin:0;padding:12px 16px;font-size:16px;background:var(--panel2);display:flex;gap:10px;align-items:baseline}
+  .op-card>h2 .code{color:var(--accent);font-weight:800}
+  .op-card>h2 .nm{color:var(--muted);font-size:13px;font-weight:400}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:12px;background:var(--panel2)}
+  td.t,th.t{text-align:left;font-weight:700}
+  td.z{color:#52617a}                  /* 0 값 흐리게 */
+  tbody tr:hover{background:rgba(56,189,248,.06)}
+  .err{color:#ef4444;padding:8px 16px;font-size:12px}
+  .note{color:var(--muted);font-size:12px;padding:10px 22px 0;line-height:1.6}
+  .nores{padding:30px 22px;color:var(--muted);font-size:15px}
+  mark{background:var(--accent);color:#06283d;border-radius:3px;padding:0 2px}
+</style>
+</head>
+<body>
+<header>
+  <h1>📦 공컨(EMPTY) 재고 · 선사별 조회</h1>
+  <span class="meta">최종 수집: <b id="collectedAt">{{ meta.get('collected_at','-') }}</b></span>
+  <span class="spacer"></span>
+  <a href="/" style="text-decoration:none"><button class="ghost">🛳️ 선석 스케줄</button></a>
+  <button id="recolBtn" onclick="recollect()">🔄 데이터 새로 수집</button>
+  <button class="ghost" onclick="location.reload()">화면 새로고침</button>
+</header>
+
+<div class="searchbar">
+  <input id="q" list="oplist" placeholder="선사 코드 입력 (예: SKR, ONE, MSC)…" autocomplete="off" oninput="filter()"
+         onkeydown="if(event.key==='Escape')clearq()">
+  <datalist id="oplist">
+    {% for o in operators %}<option value="{{ o.code }}">{{ o.code }}{% if o.name %} · {{ o.name }}{% endif %}</option>{% endfor %}
+  </datalist>
+  <button class="ghost clr" onclick="clearq()">✕ 초기화</button>
+  <span class="hint">선사 코드(또는 한글명 일부)로 검색 · 비우면 전체</span>
+</div>
+<div class="chips">
+  {% for c in ['SKR','ONE','MSC','HMM','CMA','HLC','HAS','KMD'] %}
+    {% if c in op_codes %}<span class="chip" onclick="setq('{{ c }}')">{{ c }}</span>{% endif %}
+  {% endfor %}
+</div>
+
+<div class="wrap" id="list">
+  {% for o in operators %}
+  <section class="op-card" data-code="{{ o.code }}" data-name="{{ o.name }}">
+    <h2><span class="code">{{ o.code }}</span>{% if o.name %}<span class="nm">{{ o.name }}</span>{% endif %}</h2>
+    <table>
+      <thead>
+        <tr>
+          <th class="t">터미널·구역</th>
+          {% for b in buckets %}<th>{{ b }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in o.rows %}
+        <tr>
+          <td class="t">{{ r.terminal }} · {{ r.zone }}</td>
+          {% for v in r.cells %}<td class="{% if v==0 %}z{% endif %}">{{ v if v else '·' }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endfor %}
+  <div class="nores" id="nores" style="display:none">검색 결과가 없습니다.</div>
+</div>
+
+<div class="note">
+  ※ 공개 자료 수집: <b>PNC·PNIT·HJNC·HPNT·BNCT(신항), BPT(신선대·감만)·HKT(감만, 북항)</b> — 7개 터미널.
+  DGT는 공컨 API가 보호되어 현재 미포함.
+  규격: <b>20'</b>(20피트)·<b>40'DRY</b>(40 일반)·<b>40'HQ</b>(40 하이큐브)·<b>45'</b>·<b>냉동</b>(리퍼)·<b>기타특수</b>(오픈탑·플랫랙·플랫폼·탱크).
+  {% for code, info in terminals.items() %}{% if info.error %}<br><span class="err">⚠ {{ code }} 수집 오류: {{ info.error }}</span>{% endif %}{% endfor %}
+</div>
+
+<script>
+const cards = Array.from(document.querySelectorAll('.op-card'));
+function setq(v){ document.getElementById('q').value = v; filter(); }
+function filter(){
+  const raw = document.getElementById('q').value.trim().toLowerCase();
+  let shown = 0;
+  cards.forEach(c=>{
+    const code = (c.dataset.code||'').toLowerCase();
+    const name = (c.dataset.name||'').toLowerCase();
+    const hit = !raw || code.includes(raw) || name.includes(raw);
+    c.style.display = hit ? '' : 'none';
+    if(hit) shown++;
+  });
+  document.getElementById('nores').style.display = shown ? 'none':'block';
+}
+function clearq(){ const q=document.getElementById('q'); q.value=''; filter(); q.focus(); }
+
+async function recollect(){
+  const b=document.getElementById('recolBtn');
+  const old=b.textContent; b.disabled=true; b.textContent='수집 중…';
+  try{
+    const r=await fetch('/api/collect_empty',{method:'POST'});
+    const j=await r.json();
+    const n=Object.values(j.terminals||{}).reduce((s,t)=>s+(t.rows||0),0);
+    const errs=Object.entries(j.terminals||{}).filter(([,t])=>t.error).map(([c])=>c);
+    document.getElementById('collectedAt').textContent=j.collected_at||'';
+    b.textContent=errs.length?('완료(오류:'+errs.join(',')+')'):('완료 '+n+'건');
+    setTimeout(()=>location.reload(),800);
+  }catch(e){ b.textContent='오류'; b.disabled=false; setTimeout(()=>b.textContent=old,1500); }
+}
+</script>
+</body>
+</html>
