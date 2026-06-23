@@ -233,9 +233,17 @@ def scrape_hjnc_empty():
 
 
 def scrape_pnc_empty():
-    """PNC 메인 /info/ 의 인라인 표 contain-tbl (Size행 × 선사열, 전치 구조)."""
-    s = requests.Session()
-    s.headers.update(HEADERS)
+    """PNC 메인 /info/ 의 인라인 표 contain-tbl (Size행 × 선사열, 전치 구조).
+
+    PNC는 Cloudflare 뒤 → 클라우드 IP에서 403. cloudscraper로 우회(미설치 시 일반 세션).
+    """
+    try:
+        import cloudscraper
+        s = cloudscraper.create_scraper(
+            browser={"browser": "chrome", "platform": "windows", "mobile": False})
+    except Exception:  # noqa: BLE001
+        s = requests.Session()
+        s.headers.update(HEADERS)
     r = s.get("https://svc.pncport.com/info/", timeout=TIMEOUT)
     r.raise_for_status()
     r.encoding = r.apparent_encoding or "utf-8"

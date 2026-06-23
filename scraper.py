@@ -35,6 +35,23 @@ HEADERS = {
 TIMEOUT = 25
 
 
+def _make_session(terminal):
+    """요청 세션 생성. use_cloudscraper=True면 Cloudflare 우회 세션 사용
+    (클라우드 데이터센터 IP에서 PNC 등 Cloudflare 403 대응). 미설치 시 일반 세션."""
+    if terminal.get("use_cloudscraper"):
+        try:
+            import cloudscraper
+            s = cloudscraper.create_scraper(
+                browser={"browser": "chrome", "platform": "windows", "mobile": False})
+            s.headers.update({"Accept-Language": HEADERS["Accept-Language"]})
+            return s
+        except Exception:  # noqa: BLE001
+            pass
+    s = requests.Session()
+    s.headers.update(HEADERS)
+    return s
+
+
 def _today_range():
     today = dt.date.today()
     start = today - dt.timedelta(days=config.LOOKBACK_DAYS)
@@ -214,8 +231,7 @@ def parse_table(terminal):
     url = terminal["schedule_url"]
     headers = dict(HEADERS)
     headers["Referer"] = terminal.get("referer", url)
-    sess = requests.Session()
-    sess.headers.update(HEADERS)
+    sess = _make_session(terminal)
     prime = terminal.get("prime_url")
     if prime:
         try:
