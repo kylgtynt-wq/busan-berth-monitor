@@ -44,8 +44,10 @@ TERMINALS = [
         # 세션 쿠키 없이 바로 호출하면 403 → 메인 먼저 들러 JSESSIONID 확보
         "prime_url": "https://svc.pncport.com/info/",
         "referer": "https://svc.pncport.com/info/",
-        # PNC는 Cloudflare 뒤 → 클라우드 IP에서 403. cloudscraper로 우회.
+        # PNC는 Cloudflare 뒤 → 클라우드(Render) IP는 방화벽 차단(cloudscraper로도 불가).
+        # 로컬에선 정상 수집, 클라우드에선 제외(cloud_blocked).
         "use_cloudscraper": True,
+        "cloud_blocked": True,
         "enabled": True,
     },
     {

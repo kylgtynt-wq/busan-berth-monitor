@@ -14,8 +14,14 @@
 정규화 레코드:
     {"terminal","zone","operator","group","size","qty"}   # qty>0 만
 """
+import os
+
 import requests
 from bs4 import BeautifulSoup
+
+# 클라우드(Render)에선 Cloudflare가 막는 PNC 제외(로컬은 정상).
+ON_CLOUD = bool(os.environ.get("RENDER"))
+CLOUD_BLOCKED = {"PNC"}
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 TIMEOUT = 25
@@ -283,6 +289,8 @@ def scrape_all_empty():
     """{terminal: {records, error}} 반환."""
     result = {}
     for code, fn in EMPTY_SOURCES.items():
+        if ON_CLOUD and code in CLOUD_BLOCKED:
+            continue
         try:
             result[code] = {"records": fn(), "error": None}
         except Exception as e:  # noqa: BLE001

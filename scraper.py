@@ -20,11 +20,15 @@
     }
 """
 import datetime as dt
+import os
 
 import requests
 from bs4 import BeautifulSoup
 
 import config
+
+# 클라우드(Render) 여부 — Render는 RENDER=true 환경변수를 자동 주입.
+ON_CLOUD = bool(os.environ.get("RENDER"))
 
 HEADERS = {
     "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -457,6 +461,9 @@ def scrape_all():
     result = {}
     for t in config.TERMINALS:
         if not t.get("enabled"):
+            continue
+        # 클라우드(Render IP)에선 Cloudflare가 막는 PNC 등은 제외(로컬은 정상 수집)
+        if ON_CLOUD and t.get("cloud_blocked"):
             continue
         recs, err = scrape_terminal(t)
         result[t["code"]] = {
