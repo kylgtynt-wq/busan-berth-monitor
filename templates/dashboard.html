@@ -153,7 +153,7 @@
       {% if info.records %}
       <table>
         <thead><tr>
-          <th>상태</th><th>선박명</th><th>모선항차</th><th>항로</th>
+          <th>상태</th><th>선박명</th><th>모선항차</th><th>선사</th><th>항로</th>
           <th>반입마감</th><th>접안(ETB)</th><th>출항(ETD)</th><th>선석</th><th>양/적하</th>
         </tr></thead>
         <tbody>
@@ -168,6 +168,7 @@
             </td>
             <td class="vessel {% if 'vessel' in cf %}hot{% endif %}">{{ r.vessel }}</td>
             <td>{{ r.voyage }}</td>
+            <td>{{ r.operator or '—' }}</td>
             <td>{{ r.route }}</td>
             <td class="cct {% if 'cct' in cf %}hot{% endif %}">{{ r.cct or '—' }}</td>
             <td class="{% if 'etb' in cf %}hot{% endif %}">{{ r.etb }}</td>
