@@ -133,6 +133,46 @@ def empty_page():
     )
 
 
+# 터미널별 조회 페이지 바로가기(스크래핑 대신 직접 이동 — 차단 없이 전 터미널 커버).
+TERMINAL_LINKS = [
+    {"code": "PNC", "name": "부산신항만", "port": "신항1",
+     "cntr": "https://svc.pncport.com/info/",
+     "copino": "https://svc.pncport.com/info/CMS/Edi/CopinoList.pnc?mCode=MN056"},
+    {"code": "PNIT", "name": "부산신항국제터미널", "port": "신항2",
+     "cntr": "https://www.pnitl.com/infoservice/cntr/cntrSearchList.jsp",
+     "copino": "https://www.pnitl.com/infoservice/edi/ediGateCopinoReceiptList.jsp"},
+    {"code": "HJNC", "name": "한진부산컨테이너터미널", "port": "신항3",
+     "cntr": "https://www.hjnc.co.kr/esvc/cntr/info",
+     "copino": "https://www.hjnc.co.kr/esvc/edocu/copino"},
+    {"code": "HPNT", "name": "HMM PSA 신항만", "port": "신항4",
+     "cntr": "https://www.hpnt.co.kr/infoservice/cntr/cntrSearchList.jsp",
+     "copino": "https://www.hpnt.co.kr/infoservice/edi/ediGateCopinoReceiptList.jsp"},
+    {"code": "BNCT", "name": "비엔씨티", "port": "신항5",
+     "cntr": "https://info.bnctkorea.com/esvc/cntr/cntrSrch",
+     "copino": "https://info.bnctkorea.com/esvc/edi/gateIOSrch"},
+    {"code": "BCT", "name": "부산컨테이너터미널", "port": "신항",
+     "cntr": "https://info.bct2-4.com/infoservice/index.html",
+     "copino": "https://info.bct2-4.com/infoservice/index.html"},
+    {"code": "DGT", "name": "동원글로벌터미널", "port": "신항8",
+     "cntr": "https://info.dgtbusan.com/DGT/esvc/cntr/cntrInfo",
+     "copino": "https://info.dgtbusan.com/DGT/esvc/edocu/gateIOSrch"},
+    {"code": "BPT", "name": "부산항터미널(신선대·감만)", "port": "북항",
+     "cntr": ("https://info.bptc.co.kr/content/cg/frame/cntr_frame_cg_kr.jsp"
+              "?p_id=CONT_CN_KR&snb_num=1&snb_div=service"),
+     "copino": ("https://info.bptc.co.kr/content/ed/frame/copino_query_frame_ed_kr.jsp"
+                "?p_id=CPQR_ED_KR&snb_num=6&snb_div=service")},
+    {"code": "HKT", "name": "허치슨부산(감만)", "port": "북항",
+     "cntr": "https://custom.hktl.com/jsp/T04/dataio_cntr.jsp",
+     "copino": "https://custom.hktl.com/jsp/T04/dataio_copino.jsp"},
+]
+
+
+@app.route("/links")
+def links_page():
+    """터미널별 컨테이너 조회 / 사전반출입(COPINO) 조회 바로가기."""
+    return render_template("links.html", links=TERMINAL_LINKS)
+
+
 @app.route("/api/collect", methods=["POST"])
 def api_collect():
     """수동 수집 트리거(선석+공컨)."""

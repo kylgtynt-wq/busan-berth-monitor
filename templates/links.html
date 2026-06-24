@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>컨테이너 / COPINO 조회 바로가기</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+  }
+  body.light{
+    --bg:#eef2f7; --panel:#ffffff; --panel2:#e9eff6; --line:#d3dbe6;
+    --txt:#1f2a3a; --muted:#5b6b85; --accent:#0284c7;
+  }
+  body.light header{background:linear-gradient(90deg,#0ea5e9,#0369a1);color:#fff}
+  body.light header .ghost{color:#fff;border-color:rgba(255,255,255,.55)}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","Segoe UI",sans-serif;background:var(--bg);color:var(--txt);}
+  header{padding:16px 22px;background:linear-gradient(90deg,#0c4a6e,#1e293b);border-bottom:1px solid var(--line);
+         display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header h1{font-size:18px;margin:0}
+  header .spacer{flex:1}
+  button{background:transparent;color:var(--txt);border:1px solid var(--line);border-radius:7px;
+         padding:8px 14px;font-weight:700;cursor:pointer}
+  .wrap{padding:18px 22px 40px;max-width:760px}
+  .intro{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);
+        border-radius:12px;overflow:hidden}
+  th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{font-size:12px;color:var(--muted);background:var(--panel2);font-weight:700}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:var(--panel2)}
+  .tm{font-weight:800}
+  .tm .port{display:inline-block;font-size:11px;color:var(--muted);border:1px solid var(--line);
+            padding:0 7px;border-radius:20px;margin-left:6px;font-weight:400}
+  .tm .nm{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px}
+  a.go{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
+       padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;white-space:nowrap}
+  a.go:hover{filter:brightness(1.08)}
+  a.go.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+</style>
+</head>
+<body>
+<script>
+  (function(){ if((localStorage.getItem('theme')||'light')==='light') document.body.classList.add('light'); })();
+</script>
+<header>
+  <h1>🔎 컨테이너 / COPINO 조회 바로가기</h1>
+  <span class="spacer"></span>
+  <a href="/" style="text-decoration:none"><button>🛳️ 선석</button></a>
+  <a href="/empty" style="text-decoration:none"><button>📦 공컨</button></a>
+  <button id="themeBtn" onclick="toggleTheme()">🌙 어둡게</button>
+</header>
+
+<div class="wrap">
+  <p class="intro">
+    각 터미널의 <b>컨테이너 조회</b>·<b>사전반출입(COPINO) 조회</b> 페이지로 바로 이동합니다(새 창).
+    터미널 사이트에서 직접 조회하므로 차단 없이 9개 터미널 모두 사용할 수 있습니다.
+    일부는 로그인 또는 메뉴 선택이 필요할 수 있습니다.
+  </p>
+  <table>
+    <thead>
+      <tr><th>터미널</th><th>컨테이너 조회</th><th>사전반출입(COPINO)</th></tr>
+    </thead>
+    <tbody>
+      {% for t in links %}
+      <tr>
+        <td class="tm">{{ t.code }}<span class="port">{{ t.port }}</span><span class="nm">{{ t.name }}</span></td>
+        <td>{% if t.cntr %}<a class="go" href="{{ t.cntr }}" target="_blank" rel="noopener">컨테이너 조회 ↗</a>{% else %}—{% endif %}</td>
+        <td>{% if t.copino %}<a class="go alt" href="{{ t.copino }}" target="_blank" rel="noopener">COPINO 조회 ↗</a>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+function syncThemeBtn(){
+  const b=document.getElementById('themeBtn');
+  if(b) b.textContent = document.body.classList.contains('light') ? '🌙 어둡게' : '☀️ 밝게';
+}
+function toggleTheme(){
+  const light=document.body.classList.toggle('light');
+  localStorage.setItem('theme', light?'light':'dark'); syncThemeBtn();
+}
+syncThemeBtn();
+</script>
+</body>
+</html>
