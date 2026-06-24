@@ -39,8 +39,12 @@ def _sort_key(rec):
     return (cct == "", cct or etb, etb)
 
 
+KST = dt.timezone(dt.timedelta(hours=9))
+
+
 def _now():
-    return dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # 한국시간(KST) 고정 — 클라우드(UTC) 서버에서도 한국시간으로 표시.
+    return dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _ensure_dir():
