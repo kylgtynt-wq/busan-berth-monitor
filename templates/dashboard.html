@@ -7,11 +7,19 @@
 <style>
   :root{
     --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
-    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --hot:#ffffff;
     --new:#22c55e; --new-bg:rgba(34,197,94,.14);
     --chg:#f59e0b; --chg-bg:rgba(245,158,11,.16);
     --rmv:#ef4444; --rmv-bg:rgba(239,68,68,.14);
   }
+  /* 밝은 테마 */
+  body.light{
+    --bg:#eef2f7; --panel:#ffffff; --panel2:#e9eff6; --line:#d3dbe6;
+    --txt:#1f2a3a; --muted:#5b6b85; --accent:#0284c7; --hot:#0b3a5c;
+    --new-bg:rgba(34,197,94,.16); --chg-bg:rgba(245,158,11,.22); --rmv-bg:rgba(239,68,68,.13);
+  }
+  body.light header{background:linear-gradient(90deg,#0ea5e9,#0369a1)}
+  body.light button:not(.ghost){color:#fff}
   *{box-sizing:border-box}
   body{margin:0;font-family:"Malgun Gothic","Segoe UI",sans-serif;background:var(--bg);color:var(--txt);}
   header{padding:16px 22px;background:linear-gradient(90deg,#0c4a6e,#1e293b);border-bottom:1px solid var(--line);
@@ -36,7 +44,7 @@
   .tag{font-size:10px;font-weight:800;padding:2px 6px;border-radius:5px}
   .tag.new{background:var(--new);color:#052e16}
   .tag.chg{background:var(--chg);color:#3a2606}
-  td.hot{color:#fff;font-weight:800;position:relative}
+  td.hot{color:var(--hot);font-weight:800;position:relative}
   td.hot::after{content:"●";color:var(--chg);font-size:9px;position:absolute;top:3px;right:4px}
   .vessel{font-weight:700}
   .err{color:var(--rmv);padding:10px 16px;font-size:12px}
@@ -82,12 +90,17 @@
 </style>
 </head>
 <body>
+<script>
+  // 테마 적용(기본 밝게). 깜빡임 방지를 위해 본문 최상단에서 즉시 실행.
+  (function(){ if((localStorage.getItem('theme')||'light')==='light') document.body.classList.add('light'); })();
+</script>
 <header>
   <h1>🛳️ 부산항 접안 스케줄 모니터</h1>
   <span class="meta">최종 수집: <b id="collectedAt">{{ meta.get('collected_at','-') }}</b></span>
   <span class="meta" id="autoState">🟢 자동수집 켜짐</span>
   <span class="spacer"></span>
   <a href="/empty" style="text-decoration:none"><button class="ghost">📦 공컨 재고</button></a>
+  <button class="ghost" id="themeBtn" onclick="toggleTheme()" title="밝게/어둡게">🌙 어둡게</button>
   <button onclick="collect()" id="btn">지금 수집</button>
   <button class="ghost" onclick="location.reload()">새로고침</button>
 </header>
@@ -201,6 +214,19 @@
 </div>
 
 <script>
+// 테마 토글(밝게/어둡게)
+function syncThemeBtn(){
+  const light = document.body.classList.contains('light');
+  const b = document.getElementById('themeBtn');
+  if(b) b.textContent = light ? '🌙 어둡게' : '☀️ 밝게';
+}
+function toggleTheme(){
+  const light = document.body.classList.toggle('light');
+  localStorage.setItem('theme', light ? 'light' : 'dark');
+  syncThemeBtn();
+}
+syncThemeBtn();
+
 // ===== 통합 필터: 터미널 체크 + 모선 검색 + 반입마감 조회범위 =====
 const FKEY = 'berthTerminalFilter';
 const VKEY = 'berthVesselSearch';

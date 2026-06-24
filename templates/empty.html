@@ -7,8 +7,14 @@
 <style>
   :root{
     --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
-    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --zero:#52617a;
   }
+  body.light{
+    --bg:#eef2f7; --panel:#ffffff; --panel2:#e9eff6; --line:#d3dbe6;
+    --txt:#1f2a3a; --muted:#5b6b85; --accent:#0284c7; --zero:#aab4c4;
+  }
+  body.light header{background:linear-gradient(90deg,#0ea5e9,#0369a1)}
+  body.light button:not(.ghost){color:#fff}
   *{box-sizing:border-box}
   body{margin:0;font-family:"Malgun Gothic","Segoe UI",sans-serif;background:var(--bg);color:var(--txt);}
   header{padding:16px 22px;background:linear-gradient(90deg,#0c4a6e,#1e293b);border-bottom:1px solid var(--line);
@@ -36,7 +42,7 @@
   th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
   th{color:var(--muted);font-weight:600;font-size:12px;background:var(--panel2)}
   td.t,th.t{text-align:left;font-weight:700}
-  td.z{color:#52617a}                  /* 0 값 흐리게 */
+  td.z{color:var(--zero)}              /* 0 값 흐리게 */
   tbody tr:hover{background:rgba(56,189,248,.06)}
   .err{color:#ef4444;padding:8px 16px;font-size:12px}
   .note{color:var(--muted);font-size:12px;padding:10px 22px 0;line-height:1.6}
@@ -45,11 +51,15 @@
 </style>
 </head>
 <body>
+<script>
+  (function(){ if((localStorage.getItem('theme')||'light')==='light') document.body.classList.add('light'); })();
+</script>
 <header>
   <h1>📦 공컨(EMPTY) 재고 · 선사별 조회</h1>
   <span class="meta">최종 수집: <b id="collectedAt">{{ meta.get('collected_at','-') }}</b></span>
   <span class="spacer"></span>
   <a href="/" style="text-decoration:none"><button class="ghost">🛳️ 선석 스케줄</button></a>
+  <button class="ghost" id="themeBtn" onclick="toggleTheme()" title="밝게/어둡게">🌙 어둡게</button>
   <button id="recolBtn" onclick="recollect()">🔄 데이터 새로 수집</button>
   <button class="ghost" onclick="location.reload()">화면 새로고침</button>
 </header>
@@ -116,6 +126,17 @@ function filter(){
   });
   document.getElementById('nores').style.display = shown ? 'none':'block';
 }
+// 테마 토글
+function syncThemeBtn(){
+  const b=document.getElementById('themeBtn');
+  if(b) b.textContent = document.body.classList.contains('light') ? '🌙 어둡게' : '☀️ 밝게';
+}
+function toggleTheme(){
+  const light=document.body.classList.toggle('light');
+  localStorage.setItem('theme', light?'light':'dark'); syncThemeBtn();
+}
+syncThemeBtn();
+
 function clearq(){ const q=document.getElementById('q'); q.value=''; filter(); q.focus(); }
 
 async function recollect(){
