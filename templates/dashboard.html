@@ -78,6 +78,15 @@
   .fspacer{flex:1}
   .filterbar .fall{color:var(--accent);font-size:12px;text-decoration:none;border:1px solid var(--line);
         border-radius:6px;padding:3px 10px}
+  /* 빠른 조회 바로가기 바 */
+  .quicklinks{display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+        padding:8px 22px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .quicklinks .qlabel{color:var(--muted);font-size:12px;font-weight:700;margin-right:2px}
+  .quicklinks .qsep{width:1px;height:16px;background:var(--line);margin:0 8px}
+  .qchip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);text-decoration:none;
+        border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;line-height:1.4}
+  .qchip:hover{border-color:var(--accent);color:var(--accent)}
+  .qchip.alt{border-style:dashed}
   /* 모선 검색 + 조회범위 바 */
   .toolbar2{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
         padding:8px 22px;background:var(--bg);border-bottom:1px solid var(--line);
@@ -118,6 +127,15 @@
   <span class="fspacer"></span>
   <a href="#" class="fall" onclick="setAll(true);return false">전체</a>
   <a href="#" class="fall" onclick="setAll(false);return false">해제</a>
+</div>
+
+<!-- 빠른 조회: 터미널별 컨테이너/COPINO 조회 페이지 바로가기(새 창) -->
+<div class="quicklinks">
+  <span class="qlabel">📦 컨테이너 조회:</span>
+  {% for t in links %}<a class="qchip" href="{{ t.cntr }}" target="_blank" rel="noopener">{{ t.code }}</a>{% endfor %}
+  <span class="qsep"></span>
+  <span class="qlabel">📨 COPINO 조회:</span>
+  {% for t in links %}<a class="qchip alt" href="{{ t.copino }}" target="_blank" rel="noopener">{{ t.code }}</a>{% endfor %}
 </div>
 
 <!-- 모선 검색 + 반입마감 조회 범위 -->

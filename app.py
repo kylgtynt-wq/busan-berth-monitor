@@ -70,6 +70,7 @@ def index():
         terminals=current.get("terminals", {}),
         changes=changes[:50],
         watch=monitor.WATCH_FIELDS,
+        links=TERMINAL_LINKS,
     )
 
 
