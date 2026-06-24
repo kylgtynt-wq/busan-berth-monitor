@@ -136,7 +136,7 @@ def empty_page():
 # 터미널별 조회 페이지 바로가기(스크래핑 대신 직접 이동 — 차단 없이 전 터미널 커버).
 TERMINAL_LINKS = [
     {"code": "PNC", "name": "부산신항만", "port": "신항1",
-     "cntr": "https://svc.pncport.com/info/",
+     "cntr": "https://svc.pncport.com/info/CMS/Container/Info.pnc?mCode=MN002",
      "copino": "https://svc.pncport.com/info/CMS/Edi/CopinoList.pnc?mCode=MN056"},
     {"code": "PNIT", "name": "부산신항국제터미널", "port": "신항2",
      "cntr": "https://www.pnitl.com/infoservice/cntr/cntrSearchList.jsp",
