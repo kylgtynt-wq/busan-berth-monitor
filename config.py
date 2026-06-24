@@ -24,6 +24,7 @@ TERMINALS = [
         "port": "신항",
         "base_url": "http://info.bnctkorea.com",
         "parser": "esvc_g",
+        "operator_enrich": True,   # 선석(G)에 선사 없음 → 표(T) JSON에서 보강
         "enabled": True,
     },
     {
@@ -32,6 +33,7 @@ TERMINALS = [
         "port": "신항",
         "base_url": "https://info.dgtbusan.com/DGT",
         "parser": "esvc_g",
+        "operator_enrich": True,   # 선석(G)에 선사 없음 → 표(T) JSON에서 보강
         "enabled": True,
     },
     # ---- 신항 (헤더 매핑 범용 표 파서) ----

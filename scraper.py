@@ -165,7 +165,73 @@ def parse_esvc_g(terminal):
             "rotation": rotation,
             "raw": raw,
         })
+
+    # 선석배정현황(G)에 선사가 없는 터미널(BNCT·DGT)은 표(T) JSON에서 선사 보강
+    if terminal.get("operator_enrich"):
+        opmap = _esvc_operator_map(terminal["code"])
+        if opmap:
+            for rec in records:
+                if not rec["operator"]:
+                    rec["operator"] = opmap.get(rec["voyage"], "")
     return records
+
+
+# 선사 보강용: BNCT/DGT 표(berthScheduleT) JSON에서 {모선항차: 선사} 추출
+def _esvc_operator_map(code):
+    try:
+        if code == "BNCT":
+            return _bnct_operator_map()
+        if code == "DGT":
+            return _dgt_operator_map()
+    except Exception:  # noqa: BLE001
+        return {}
+    return {}
+
+
+def _bnct_operator_map():
+    start = (dt.date.today() - dt.timedelta(days=2)).strftime("%Y-%m-%d")
+    end = (dt.date.today() + dt.timedelta(days=10)).strftime("%Y-%m-%d")
+    s = requests.Session()
+    s.headers.update(HEADERS)
+    s.get("http://info.bnctkorea.com/esvc/vessel/berthScheduleT", timeout=TIMEOUT)
+    r = s.get("http://info.bnctkorea.com/esvc/vessel/berthScheduleT/list",
+              params={"VVD": "", "StrDate": start, "EndDate": end},
+              headers={"Referer": "http://info.bnctkorea.com/esvc/vessel/berthScheduleT"},
+              timeout=TIMEOUT)
+    r.raise_for_status()
+    out = {}
+    for row in r.json():
+        vvd = (row.get("VVD") or "").strip()
+        op = (row.get("OPERATOR") or "").strip()
+        if vvd and op:
+            out[vvd] = op
+    return out
+
+
+def _dgt_operator_map():
+    import json as _json
+    import re as _re
+    start = (dt.date.today() - dt.timedelta(days=2)).strftime("%Y%m%d")
+    end = (dt.date.today() + dt.timedelta(days=10)).strftime("%Y%m%d")
+    s = requests.Session()
+    s.headers.update(HEADERS)
+    page = s.get("https://www.dgtbusan.com/DGT/esvc/vessel/berthScheduleT", timeout=TIMEOUT).text
+    meta = dict(_re.findall(r'<meta\s+name="(_csrf[^"]*)"\s+content="([^"]*)"', page))
+    hd = {"Referer": "https://www.dgtbusan.com/DGT/esvc/vessel/berthScheduleT",
+          "Content-Type": "application/json"}
+    if meta.get("_csrf_header"):
+        hd[meta["_csrf_header"]] = meta["_csrf"]
+    body = {"fromDate": start, "toDate": end, "vessel": "", "voyage": ""}
+    r = s.post("https://www.dgtbusan.com/DGT/esvc/vessel/vesselSchedule",
+               headers=hd, data=_json.dumps(body), timeout=TIMEOUT)
+    r.raise_for_status()
+    out = {}
+    for row in r.json().get("vesselSchedules", []):
+        key = ((row.get("vesselCode") or "") + (row.get("voyageSeq") or "")).strip()
+        carrier = (row.get("carrier") or "").strip()
+        if key and carrier:
+            out[key] = carrier
+    return out
 
 
 # ---------------------------------------------------------------------------
