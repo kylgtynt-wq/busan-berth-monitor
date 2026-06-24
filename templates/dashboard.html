@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
-    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --hot:#ffffff;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --hot:#ffffff; --cct:#cbd5e1;
     --new:#22c55e; --new-bg:rgba(34,197,94,.14);
     --chg:#f59e0b; --chg-bg:rgba(245,158,11,.16);
     --rmv:#ef4444; --rmv-bg:rgba(239,68,68,.14);
@@ -15,7 +15,7 @@
   /* 밝은 테마 */
   body.light{
     --bg:#eef2f7; --panel:#ffffff; --panel2:#e9eff6; --line:#d3dbe6;
-    --txt:#1f2a3a; --muted:#5b6b85; --accent:#0284c7; --hot:#0b3a5c;
+    --txt:#1f2a3a; --muted:#5b6b85; --accent:#0284c7; --hot:#0b3a5c; --cct:#334155;
     --new-bg:rgba(34,197,94,.16); --chg-bg:rgba(245,158,11,.22); --rmv-bg:rgba(239,68,68,.13);
   }
   body.light header{background:linear-gradient(90deg,#0ea5e9,#0369a1);color:#fff}
@@ -88,7 +88,7 @@
   .toolbar2 select{background:var(--panel);border:1px solid var(--line);color:var(--txt);
         border-radius:7px;padding:6px 9px;font-size:13px}
   .toolbar2 .hint{color:var(--muted);font-size:12px}
-  td.cct{color:#cbd5e1}
+  td.cct{color:var(--cct)}
 </style>
 </head>
 <body>
