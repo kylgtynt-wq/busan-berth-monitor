@@ -14,9 +14,16 @@ from flask import Flask, jsonify, render_template
 
 import config
 import monitor
+import scraper
 import scraper_empty
 
 app = Flask(__name__)
+
+# 컨테이너 조회(KL-NET, 회사계정 인증)는 공개 클라우드에 노출하지 않고 로컬에서만 제공.
+# Render는 RENDER 환경변수를 자동 주입 → scraper.ON_CLOUD 로 판별.
+CONTAINER_ENABLED = not scraper.ON_CLOUD
+if CONTAINER_ENABLED:
+    import klnet
 
 # 마지막 수집 결과(상태 폴링용)
 _last = {"collected_at": None, "changes": 0, "running": False}
@@ -71,6 +78,7 @@ def index():
         changes=changes[:50],
         watch=monitor.WATCH_FIELDS,
         links=TERMINAL_LINKS,
+        show_container=CONTAINER_ENABLED,
     )
 
 
@@ -172,6 +180,27 @@ TERMINAL_LINKS = [
 def links_page():
     """터미널별 컨테이너 조회 / 사전반출입(COPINO) 조회 바로가기."""
     return render_template("links.html", links=TERMINAL_LINKS)
+
+
+if CONTAINER_ENABLED:
+    @app.route("/container")
+    def container_page():
+        """KL-NET 컨테이너이동현황(국내) 통합 조회 화면 (로컬 전용)."""
+        return render_template("container.html")
+
+    @app.route("/api/container")
+    def api_container():
+        """컨테이너 번호로 전 터미널 이동이력 조회 (KL-NET eTrans, 로컬 전용)."""
+        from flask import request
+        cno = (request.args.get("no") or "").strip()
+        if not cno:
+            return jsonify({"ok": False, "message": "컨테이너 번호를 입력하세요.",
+                            "count": 0, "rows": []})
+        try:
+            return jsonify(klnet.query_container(cno))
+        except Exception as e:  # noqa: BLE001
+            return jsonify({"ok": False, "message": f"{type(e).__name__}: {e}",
+                            "count": 0, "rows": []})
 
 
 @app.route("/api/collect", methods=["POST"])

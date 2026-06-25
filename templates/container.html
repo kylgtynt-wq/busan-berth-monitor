@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>컨테이너 이동현황 통합조회</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+  }
+  body.light{
+    --bg:#eef2f7; --panel:#ffffff; --panel2:#e9eff6; --line:#d3dbe6;
+    --txt:#1f2a3a; --muted:#5b6b85; --accent:#0284c7;
+  }
+  body.light header{background:linear-gradient(90deg,#0ea5e9,#0369a1);color:#fff}
+  body.light header .ghost{color:#fff;border-color:rgba(255,255,255,.55)}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","Segoe UI",sans-serif;background:var(--bg);color:var(--txt);}
+  header{padding:16px 22px;background:linear-gradient(90deg,#0c4a6e,#1e293b);border-bottom:1px solid var(--line);
+         display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header h1{font-size:18px;margin:0}
+  header .spacer{flex:1}
+  button{background:transparent;color:var(--txt);border:1px solid var(--line);border-radius:7px;
+         padding:8px 14px;font-weight:700;cursor:pointer}
+  .wrap{padding:18px 22px 40px;max-width:1120px}
+  .searchbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .searchbar input{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px;
+         padding:11px 14px;font-size:15px;font-weight:700;letter-spacing:1px;width:240px;text-transform:uppercase}
+  .searchbar .btn-go{background:var(--accent);color:#fff;border:none}
+  .meta{color:var(--muted);font-size:13px;margin:6px 0 14px}
+  .meta b{color:var(--txt)}
+  /* 모바일: 컬럼 많은 표를 가로 스크롤로 */
+  #result{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px}
+  table{width:100%;min-width:760px;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);
+        border-radius:12px;overflow:hidden;font-size:13px}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-size:11px;color:var(--muted);background:var(--panel2);font-weight:700}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:var(--panel2)}
+  .tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:20px;font-weight:700}
+  .tag.in{background:rgba(56,189,248,.16);color:var(--accent)}
+  .tag.out{background:rgba(248,113,113,.16);color:#f87171}
+  .empty{color:var(--muted);padding:26px;text-align:center}
+  .note{color:var(--muted);font-size:12px;line-height:1.6;margin-top:14px}
+  @media (max-width:640px){
+    header{position:static;padding:11px 13px;gap:8px}
+    header h1{font-size:15px;width:100%}
+    .wrap{padding:12px 13px 30px}
+    .searchbar input{width:100%}
+    table{font-size:12px}
+    th,td{padding:8px 7px}
+  }
+</style>
+</head>
+<body>
+<script>
+  (function(){ if((localStorage.getItem('theme')||'light')==='light') document.body.classList.add('light'); })();
+</script>
+<header>
+  <h1>📦 컨테이너 이동현황 통합조회</h1>
+  <span class="spacer"></span>
+  <a href="/" style="text-decoration:none"><button>🛳️ 선석</button></a>
+  <a href="/empty" style="text-decoration:none"><button>📦 공컨</button></a>
+  <a href="/links" style="text-decoration:none"><button>🔎 터미널조회</button></a>
+  <button id="themeBtn" onclick="toggleTheme()">🌙 어둡게</button>
+</header>
+
+<div class="wrap">
+  <div class="searchbar">
+    <input id="cno" placeholder="컨테이너 번호 (예: TEMU1234567)" maxlength="11"
+           autocomplete="off" onkeydown="if(event.key==='Enter')search()">
+    <button class="btn-go" onclick="search()">조회</button>
+  </div>
+  <div class="meta" id="meta"></div>
+  <div id="result"></div>
+  <p class="note">
+    KL-NET eTrans <b>컨테이너이동현황(국내)</b> 데이터를 사용합니다. 부산·인천 등 전국 터미널의
+    반출입·이동 이력을 한 번에 조회합니다(최신순). 오토픽업 가컨테이너번호(ZZZZ…, EMPTY 등)는 조회되지 않습니다.
+  </p>
+</div>
+
+<script>
+function syncThemeBtn(){
+  const b=document.getElementById('themeBtn');
+  if(b) b.textContent = document.body.classList.contains('light') ? '🌙 어둡게' : '☀️ 밝게';
+}
+function toggleTheme(){
+  const light=document.body.classList.toggle('light');
+  localStorage.setItem('theme', light?'light':'dark'); syncThemeBtn();
+}
+syncThemeBtn();
+
+function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+async function search(){
+  const cno=document.getElementById('cno').value.trim().toUpperCase();
+  const meta=document.getElementById('meta'), res=document.getElementById('result');
+  if(!cno){ meta.textContent='컨테이너 번호를 입력하세요.'; res.innerHTML=''; return; }
+  meta.textContent='조회 중…'; res.innerHTML='';
+  try{
+    const r=await fetch('/api/container?no='+encodeURIComponent(cno));
+    const d=await r.json();
+    if(!d.ok && (!d.rows||!d.rows.length)){
+      meta.innerHTML='<b>'+esc(cno)+'</b> — '+esc(d.message||'조회 실패');
+      res.innerHTML='<div class="empty">결과가 없습니다.</div>'; return;
+    }
+    meta.innerHTML='<b>'+esc(cno)+'</b> · 총 <b>'+(d.count||d.rows.length)+'</b>건 · '+esc(d.message||'');
+    if(!d.rows.length){ res.innerHTML='<div class="empty">결과가 없습니다.</div>'; return; }
+    let h='<table><thead><tr>'+
+      '<th>이동시각</th><th>수출입</th><th>구분</th><th>터미널</th><th>모선</th><th>항차</th>'+
+      '<th>선사</th><th>적공</th><th>SIZE</th><th>출발</th><th>도착</th><th>차량</th><th>RFID</th>'+
+      '</tr></thead><tbody>';
+    for(const x of d.rows){
+      const io = x.inout==='수입' ? '<span class="tag in">수입</span>'
+               : x.inout==='수출' ? '<span class="tag out">수출</span>' : esc(x.inout);
+      h+='<tr><td>'+esc(x.move_time)+'</td><td>'+io+'</td><td>'+esc(x.move_type)+'</td>'+
+         '<td title="'+esc(x.terminal_name)+'">'+esc(x.terminal)+'</td>'+
+         '<td>'+esc(x.vessel)+'</td><td>'+esc(x.voyage)+'</td><td>'+esc(x.carrier)+'</td>'+
+         '<td>'+esc(x.full_empty)+'</td><td>'+esc(x.size)+'</td>'+
+         '<td>'+esc(x.move_from)+'</td><td>'+esc(x.move_to)+'</td>'+
+         '<td>'+esc(x.car_no)+'</td><td>'+esc(x.rfid)+'</td></tr>';
+    }
+    h+='</tbody></table>';
+    res.innerHTML=h;
+  }catch(e){
+    meta.textContent='오류: '+e; res.innerHTML='';
+  }
+}
+</script>
+</body>
+</html>

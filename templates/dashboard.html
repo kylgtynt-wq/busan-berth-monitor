@@ -131,6 +131,7 @@
   <span class="meta" id="autoState">🟢 자동수집 켜짐</span>
   <span class="spacer"></span>
   <a href="/empty" style="text-decoration:none"><button class="ghost">📦 공컨 재고</button></a>
+  {% if show_container %}<a href="/container" style="text-decoration:none"><button class="ghost">📦 컨테이너 조회</button></a>{% endif %}
   <a href="/links" style="text-decoration:none"><button class="ghost">🔎 조회 바로가기</button></a>
   <button class="ghost" id="themeBtn" onclick="toggleTheme()" title="밝게/어둡게">🌙 어둡게</button>
   <button onclick="collect()" id="btn">지금 수집</button>
