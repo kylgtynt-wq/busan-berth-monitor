@@ -51,6 +51,13 @@
   td.hot{color:var(--hot);font-weight:800;position:relative}
   td.hot::after{content:"●";color:var(--chg);font-size:9px;position:absolute;top:3px;right:4px}
   .vessel{font-weight:700}
+  /* 가로 스크롤 시 상태·선박명 열 왼쪽 고정 */
+  th:nth-child(1),td:nth-child(1){position:sticky;left:0;z-index:2;width:64px;min-width:64px;background:var(--panel)}
+  th:nth-child(2),td:nth-child(2){position:sticky;left:64px;z-index:2;background:var(--panel);box-shadow:1px 0 0 var(--line)}
+  thead th:nth-child(1),thead th:nth-child(2){z-index:3;background:var(--panel2)}
+  tr.row-new td:nth-child(1),tr.row-new td:nth-child(2){background:linear-gradient(var(--new-bg),var(--new-bg)),var(--panel)}
+  tr.row-changed td:nth-child(1),tr.row-changed td:nth-child(2){background:linear-gradient(var(--chg-bg),var(--chg-bg)),var(--panel)}
+  tbody tr:hover td:nth-child(1),tbody tr:hover td:nth-child(2){background:linear-gradient(rgba(56,189,248,.06),rgba(56,189,248,.06)),var(--panel)}
   .err{color:var(--rmv);padding:10px 16px;font-size:12px}
   /* 변동 패널 */
   aside{background:var(--panel);border:1px solid var(--line);border-radius:12px;position:sticky;top:74px;max-height:calc(100vh - 96px);overflow:auto}
